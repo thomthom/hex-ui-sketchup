@@ -87,7 +87,11 @@ module TT::Plugins::Hex
       @position = @drag_position if @drag_position
       @left_button_down = nil
       @drag_position = nil
-      UI.play_sound(File.join(__dir__, 'audio', 'beep.wav'))
+      if point_inside?([x, y, 0])
+        # TODO: Make this method return true/false to indicate it was clicked.
+        #   Make the container emit the sound - only once.
+        UI.play_sound(File.join(__dir__, 'audio', 'beep.wav'))
+      end
     end
 
     # @param [Integer] flags
