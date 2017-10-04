@@ -42,6 +42,13 @@ module TT::Plugins::Hex
       view.invalidate
     end
 
+    # TODO: onLButtonUp doesn't seem to trigger after this event.
+    #   See if faking an up-click with a timer (yuck) can work?
+    # def onLButtonDoubleClick(flags, x, y, view)
+    #   @items.each { |item| item.onLButtonDoubleClick(flags, x, y, view) }
+    #   view.invalidate
+    # end
+
     def onMouseMove(flags, x, y, view)
       @items.each { |item| item.onMouseMove(flags, x, y, view) }
       view.invalidate
