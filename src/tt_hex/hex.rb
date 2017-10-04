@@ -10,12 +10,12 @@ module TT::Plugins::Hex
     COLOR_BACKGROUND_HOVER = Sketchup::Color.new(0, 255, 0, 128)
     COLOR_BORDER = Sketchup::Color.new(255, 0, 0)
 
-    BORDER_SIZE = 2
-    PADDING = 1
+    BORDER_SIZE = 2 # Pixels
+    PADDING = 1 # Pixels
 
-    RADIUS = 30
+    RADIUS = 30 # Pixels
 
-    SNAP_DISTANCE = 10
+    SNAP_DISTANCE = 10 # Pixels
 
     ICONS = {
       :alert => "\uf071",
