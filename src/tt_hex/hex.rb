@@ -29,9 +29,12 @@ module TT::Plugins::Hex
     }
 
     def initialize(position = ORIGIN)
-      @parent = nil
-      @position = Geom::Point3d.new(position)
+      @parent = nil # Owner of this Hex.
+      @position = Geom::Point3d.new(position) # Center position.
       @icon = ICONS.values.sample
+      # Transient:
+      @drag_position = nil # The position while being dragged.
+      @left_button_down = nil
     end
 
     # @return [Geom::Point3d]
@@ -109,14 +112,17 @@ module TT::Plugins::Hex
       radius = RADIUS - (BORDER_SIZE / 2) - PADDING
       points = hexagon(position, radius)
 
+      # Background
       view.drawing_color = background_color
       view.draw2d(GL_POLYGON, points)
 
+      # Border
       view.line_stipple = ''
       view.line_width = BORDER_SIZE
       view.drawing_color = COLOR_BORDER
       view.draw2d(GL_LINE_LOOP, points)
 
+      # Glyph
       # TODO: Cache this option hash elsewhere.
       options = {
         :font => "FontAwesome", # TODO: Check if available on system.
