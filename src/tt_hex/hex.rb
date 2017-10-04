@@ -46,14 +46,9 @@ module TT::Plugins::Hex
       hexagon(position, RADIUS)
     end
 
-    # @param [Array<Geom::Point3d>] points Array of 6 points.
-    #
     # @return [Array<Array(Geom::Point3d, Geom::Point3d)>]    
-    def segments(points)
-      6.times.map { |i|
-        # TODO: Consider a custom Segment class to wrap data.
-        [ points[i - 1], points[i] ]
-      }
+    def segments
+      ngon_segments(polygon)
     end
 
     # Check if a screen position is within the hex.
@@ -165,25 +160,35 @@ module TT::Plugins::Hex
       #   childen's positions.
       point = Geom::Point3d.new(x, y, 0)
       points = hexagon(point, RADIUS)
-      this_segments = segments(points)
+      this_segments = ngon_segments(points) # Cache.
       parent.items.each { |item|
+        # Traverse through all the siblings and see if this hex is close enough
+        # to snap to either of them.
         next if item == self
+        # Each side of the hex is compared to the sides of the other hex'.
         this_segments.each_with_index { |this_segment, i|
+          # Get the vector from the hex's position (center) to the mid-point
+          # of its current side we are checking. This is used later to check
+          # is we are close enough to snap.
+          # TODO: Potential to optimize at time of reposition if this
+          #   computation takes too much time.
           this_vector = vector_to_midpoint(point, this_segment)
-
-          item_points = hexagon(item.position, RADIUS)
-          item.segments(item_points).each_with_index { |other_segment, j|
+          item.segments.each_with_index { |other_segment, j|
+            # Get the vector from the other hex's position to its side which
+            # is being compared. If the normals are opposing then they can
+            # be considered for snapping.
             other_vector = vector_to_midpoint(item.position, other_segment)
-
             next unless this_vector.samedirection?(other_vector.reverse)
-
+            # Hexes will snap when two of their side's mid-point is within a
+            # given distance.
             this_midpoint = midpoint(this_segment)
             other_midpoint = midpoint(other_segment)
-
             vector = this_midpoint.vector_to(other_midpoint)
             next unless vector.valid?
             next if vector.length > SNAP_DISTANCE
-
+            # When there's a snap the computed new position is returned for the
+            # caller to use.
+            # TODO: Check if another hex is at this position already.
             return point.offset(vector)
           }
         }
@@ -206,7 +211,7 @@ module TT::Plugins::Hex
 
     # @param [Geom::Point3d] center
     # @param [Numeric] radius
-    # @param [Integer] n Number of sides
+    # @param [Integer] n Number of sides in n-gon.
     #
     # @return [Array<Geom::Point3d>]
     def ngon(center, radius, n)
@@ -217,6 +222,16 @@ module TT::Plugins::Hex
         points << Geom::Point3d.new(x, y, 0)
       }
       points
+    end
+
+    # @param [Array<Geom::Point3d>] points
+    #
+    # @return [Array<Array(Geom::Point3d, Geom::Point3d)>]    
+    def ngon_segments(points)
+      points.size.times.map { |i|
+        # TODO: Consider a custom Segment class to wrap data.
+        [ points[i - 1], points[i] ]
+      }
     end
 
   end # class
