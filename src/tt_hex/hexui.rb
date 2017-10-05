@@ -19,19 +19,29 @@ module TT::Plugins::Hex
       Sketchup.active_model.active_view.invalidate
     end
 
+    # @param [Sketchup::View] view
     def deactivate(view)
       view.invalidate
     end
 
+    # @param [Sketchup::View] view
     def resume(view)
       view.invalidate
     end
 
+    # @param [Integer] flags
+    # @param [Float] x
+    # @param [Float] y
+    # @param [Sketchup::View] view
     def onLButtonDown(flags, x, y, view)
       @layers.each { |key, layer| layer.onLButtonDown(flags, x, y, view) }
       view.invalidate
     end
 
+    # @param [Integer] flags
+    # @param [Float] x
+    # @param [Float] y
+    # @param [Sketchup::View] view
     def onLButtonUp(flags, x, y, view)
       @layers.each { |key, layer| layer.onLButtonUp(flags, x, y, view) }
       view.invalidate
@@ -44,11 +54,20 @@ module TT::Plugins::Hex
     #   view.invalidate
     # end
 
+    # @param [Integer] flags
+    # @param [Float] x
+    # @param [Float] y
+    # @param [Sketchup::View] view
     def onMouseMove(flags, x, y, view)
       @layers.each { |key, layer| layer.onMouseMove(flags, x, y, view) }
       view.invalidate
     end
 
+    # @param [Sketchup::Menu] menu
+    # @param [Integer] flags
+    # @param [Float] x
+    # @param [Float] y
+    # @param [Sketchup::View] view
     def getMenu(menu, flags, x, y, view)
       menu.add_item('Add Hex') {
         layers[:hex].add_hex(x, y)
@@ -62,6 +81,7 @@ module TT::Plugins::Hex
       }
     end
 
+    # @param [Sketchup::View] view
     def draw(view)
       @layers.each { |key, layer| layer.draw(view) }
     end

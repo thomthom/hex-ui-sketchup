@@ -64,7 +64,7 @@ module TT::Plugins::Hex
       parent.layers[:hex].items.each { |item|
         positions << circle2d(item.position, 4, X_AXIS, 12)
         item.segments.each { |segment|
-          midpoints << circle2d(midpoint(segment), 2, X_AXIS, 6)
+          midpoints << circle2d(segment.midpoint, 2, X_AXIS, 6)
         }
       }
 

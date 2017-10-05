@@ -1,10 +1,14 @@
 require 'tt_hex/baseobject'
+require 'tt_hex/geomutils'
+require 'tt_hex/segment'
 
 module TT::Plugins::Hex
 
   class Hex < BaseObject
 
     attr_accessor :parent
+
+    include GeomUtils
 
     COLOR_BACKGROUND_NORMAL = Sketchup::Color.new(255, 0, 0, 128)
     COLOR_BACKGROUND_HOVER = Sketchup::Color.new(0, 255, 0, 128)
@@ -29,11 +33,11 @@ module TT::Plugins::Hex
     }
 
     def initialize(position = ORIGIN)
-      @parent = nil # Owner of this Hex.
-      @position = Geom::Point3d.new(position) # Center position.
+      @parent = nil
+      @position = Geom::Point3d.new(position)
       @icon = ICONS.values.sample
-      # Transient:
-      @drag_position = nil # The position while being dragged.
+
+      @drag_position = nil
       @left_button_down = nil
     end
 
@@ -49,7 +53,7 @@ module TT::Plugins::Hex
       hexagon(position, RADIUS)
     end
 
-    # @return [Array<Array(Geom::Point3d, Geom::Point3d)>]    
+    # @return [Array<Segment>]    
     def segments
       ngon_segments(polygon)
     end
@@ -140,24 +144,6 @@ module TT::Plugins::Hex
 
     private
 
-    # @param [Array(Geom::Point3d, Geom::Point3d)]
-    #
-    # @return [Geom::Point3d]
-    def midpoint(segment)
-      # TODO: Move to GeomUtils.
-      # TODO: Expose as part of Segment.
-      Geom.linear_combination(0.5, segment.first, 0.5, segment.last) 
-    end
-
-    # @param [Geom::Point3d] point
-    # @param [Array(Geom::Point3d, Geom::Point3d)] segment
-    #
-    # @return [Geom::Vector3d]
-    def vector_to_midpoint(point, segment)
-      # TODO: Expose as part of Segment.
-      point.vector_to(midpoint(segment))
-    end
-
     # Used to take a potential new position of a hex and snap it to its
     # siblings. The returned value should be used for the hex's new position.
     #
@@ -182,18 +168,16 @@ module TT::Plugins::Hex
           # is we are close enough to snap.
           # TODO: Potential to optimize at time of reposition if this
           #   computation takes too much time.
-          this_vector = vector_to_midpoint(point, this_segment)
+          this_vector = point.vector_to(this_segment.midpoint)
           item.segments.each_with_index { |other_segment, j|
             # Get the vector from the other hex's position to its side which
             # is being compared. If the normals are opposing then they can
             # be considered for snapping.
-            other_vector = vector_to_midpoint(item.position, other_segment)
+            other_vector = item.position.vector_to(other_segment.midpoint)
             next unless this_vector.samedirection?(other_vector.reverse)
             # Hexes will snap when two of their side's mid-point is within a
             # given distance.
-            this_midpoint = midpoint(this_segment)
-            other_midpoint = midpoint(other_segment)
-            vector = this_midpoint.vector_to(other_midpoint)
+            vector = this_segment.midpoint.vector_to(other_segment.midpoint)
             next unless vector.valid?
             next if vector.length > SNAP_DISTANCE
             # When there's a snap the computed new position is returned for the
@@ -217,31 +201,6 @@ module TT::Plugins::Hex
     # @return [Array<Geom::Point3d>]
     def hexagon(center, radius)
       ngon(center, radius, 6)
-    end
-
-    # @param [Geom::Point3d] center
-    # @param [Numeric] radius
-    # @param [Integer] n Number of sides in n-gon.
-    #
-    # @return [Array<Geom::Point3d>]
-    def ngon(center, radius, n)
-      points = []
-      n.times { |i|
-        x = center.x + radius * Math.cos(2 * Math::PI * i / n)
-        y = center.y + radius * Math.sin(2 * Math::PI * i / n)
-        points << Geom::Point3d.new(x, y, 0)
-      }
-      points
-    end
-
-    # @param [Array<Geom::Point3d>] points
-    #
-    # @return [Array<Array(Geom::Point3d, Geom::Point3d)>]    
-    def ngon_segments(points)
-      points.size.times.map { |i|
-        # TODO: Consider a custom Segment class to wrap data.
-        [ points[i - 1], points[i] ]
-      }
     end
 
   end # class

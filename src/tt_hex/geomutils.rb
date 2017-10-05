@@ -2,6 +2,8 @@ module TT::Plugins::Hex
 
   module GeomUtils
 
+    private
+
     # @param [Geom::Point3d] center
     # @param [Numeric] radius
     # @param [Numeric] start_angle
@@ -65,6 +67,30 @@ module TT::Plugins::Hex
     # @return [Geom::Point3d]
     def midpoint(segment)
       Geom.linear_combination(0.5, segment.first, 0.5, segment.last) 
+    end
+
+    # @param [Geom::Point3d] center
+    # @param [Numeric] radius
+    # @param [Integer] n Number of sides in n-gon.
+    #
+    # @return [Array<Geom::Point3d>]
+    def ngon(center, radius, n)
+      points = []
+      n.times { |i|
+        x = center.x + radius * Math.cos(2 * Math::PI * i / n)
+        y = center.y + radius * Math.sin(2 * Math::PI * i / n)
+        points << Geom::Point3d.new(x, y, 0)
+      }
+      points
+    end
+
+    # @param [Array<Geom::Point3d>] points
+    #
+    # @return [Array<Array(Geom::Point3d, Geom::Point3d)>]    
+    def ngon_segments(points)
+      points.size.times.map { |i|
+        Segment.new(points[i - 1], points[i])
+      }
     end
 
   end # module
