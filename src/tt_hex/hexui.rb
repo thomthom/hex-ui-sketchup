@@ -1,4 +1,5 @@
 require 'tt_hex/hex'
+require 'tt_hex/debugview'
 
 module TT::Plugins::Hex
 
@@ -12,6 +13,8 @@ module TT::Plugins::Hex
       @items = []
       add_hex(600, 300)
       add_hex(680, 300)
+      @debugview = DebugView.new(self)
+      @debug = Sketchup.read_default('tt_hex', 'debugview', false)
     end
 
     def add_hex(x, y)
@@ -58,10 +61,19 @@ module TT::Plugins::Hex
       menu.add_item('Add Hex') {
         add_hex(x, y)
       }
+      menu.add_separator
+      id = menu.add_item('Debug View') {
+        @debug = !@debug
+        Sketchup.write_default('tt_hex', 'debugview', @debug)
+      }
+      menu.set_validation_proc(id)  {
+        @debug ? MF_CHECKED : MF_ENABLED
+      }
     end
 
     def draw(view)
       @items.each { |item| item.draw(view) }
+      @debugview.draw(view) if @debug
     end
 
   end # class

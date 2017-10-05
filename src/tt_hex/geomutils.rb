@@ -60,6 +60,13 @@ module TT::Plugins::Hex
       Geom::Transformation.new(position, xaxis, yaxis)
     end
 
+    # @param [Array(Geom::Point3d, Geom::Point3d)]
+    #
+    # @return [Geom::Point3d]
+    def midpoint(segment)
+      Geom.linear_combination(0.5, segment.first, 0.5, segment.last) 
+    end
+
   end # module
 
 end # module
