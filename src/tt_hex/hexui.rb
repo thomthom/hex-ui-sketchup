@@ -1,26 +1,18 @@
-require 'tt_hex/hex'
 require 'tt_hex/debugview'
+require 'tt_hex/hex'
+require 'tt_hex/hexview'
 
 module TT::Plugins::Hex
 
   class HexUI
 
-    attr_accessor :items
+    attr_accessor :layers
 
     def initialize
-      # TODO: Add a Container class and delegate to that instead.
-      #   This is a Tool class and should act as a controller.
-      @items = []
-      add_hex(600, 300)
-      add_hex(680, 300)
-      @debugview = DebugView.new(self)
-      @debug = Sketchup.read_default('tt_hex', 'debugview', false)
-    end
-
-    def add_hex(x, y)
-      hex = Hex.new([x, y, 0])
-      hex.parent = self
-      @items << hex
+      @layers = {
+        hex: HexView.new(self),
+        debug: DebugView.new(self),
+      }
     end
 
     def activate
@@ -36,12 +28,12 @@ module TT::Plugins::Hex
     end
 
     def onLButtonDown(flags, x, y, view)
-      @items.each { |item| item.onLButtonDown(flags, x, y, view) }
+      @layers.each { |key, layer| layer.onLButtonDown(flags, x, y, view) }
       view.invalidate
     end
 
     def onLButtonUp(flags, x, y, view)
-      @items.each { |item| item.onLButtonUp(flags, x, y, view) }
+      @layers.each { |key, layer| layer.onLButtonUp(flags, x, y, view) }
       view.invalidate
     end
 
@@ -53,27 +45,25 @@ module TT::Plugins::Hex
     # end
 
     def onMouseMove(flags, x, y, view)
-      @items.each { |item| item.onMouseMove(flags, x, y, view) }
+      @layers.each { |key, layer| layer.onMouseMove(flags, x, y, view) }
       view.invalidate
     end
 
     def getMenu(menu, flags, x, y, view)
       menu.add_item('Add Hex') {
-        add_hex(x, y)
+        layers[:hex].add_hex(x, y)
       }
       menu.add_separator
       id = menu.add_item('Debug View') {
-        @debug = !@debug
-        Sketchup.write_default('tt_hex', 'debugview', @debug)
+        layers[:debug].enabled = !layers[:debug].enabled?
       }
       menu.set_validation_proc(id)  {
-        @debug ? MF_CHECKED : MF_ENABLED
+        layers[:debug].enabled? ? MF_CHECKED : MF_ENABLED
       }
     end
 
     def draw(view)
-      @items.each { |item| item.draw(view) }
-      @debugview.draw(view) if @debug
+      @layers.each { |key, layer| layer.draw(view) }
     end
 
   end # class

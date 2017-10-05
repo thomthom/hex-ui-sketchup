@@ -4,27 +4,29 @@ require 'tt_hex/glutils'
 
 module TT::Plugins::Hex
 
-  class DebugView < BaseObject
+  class HexView < BaseObject
 
     include GeomUtils
     include GLUtils
 
     attr_accessor :parent
+    attr_accessor :items
 
     def initialize(parent)
       @parent = parent
-      @enabled = Sketchup.read_default('tt_hex', 'debugview', false)
+      @items = []
+      add_hex(600, 300)
+      add_hex(680, 300)
     end
 
-    # @param [Boolean] value
-    def enabled=(value)
-      @enabled = value
-      Sketchup.write_default('tt_hex', 'debugview', @enabled)
-    end
-
-    # @return [Boolean]
-    def enabled?
-      @enabled
+    # @param [Float] x
+    # @param [Float] y
+    #
+    # @return [Hex]
+    def add_hex(x, y)
+      hex = Hex.new([x, y, 0])
+      hex.parent = self
+      @items << hex
     end
 
     # @param [Integer] flags
@@ -32,6 +34,7 @@ module TT::Plugins::Hex
     # @param [Float] y
     # @param [Sketchup::View] view
     def onLButtonDown(flags, x, y, view)
+      @items.each { |item| item.onLButtonDown(flags, x, y, view) }
     end
 
     # @param [Integer] flags
@@ -39,6 +42,7 @@ module TT::Plugins::Hex
     # @param [Float] y
     # @param [Sketchup::View] view
     def onLButtonDoubleClick(flags, x, y, view)
+      @items.each { |item| item.onLButtonUp(flags, x, y, view) }
     end
 
     # @param [Integer] flags
@@ -46,6 +50,7 @@ module TT::Plugins::Hex
     # @param [Float] y
     # @param [Sketchup::View] view
     def onLButtonUp(flags, x, y, view)
+      @items.each { |item| item.onLButtonUp(flags, x, y, view) }
     end
 
     # @param [Integer] flags
@@ -53,29 +58,12 @@ module TT::Plugins::Hex
     # @param [Float] y
     # @param [Sketchup::View] view
     def onMouseMove(flags, x, y, view)
+      @items.each { |item| item.onMouseMove(flags, x, y, view) }
     end
 
     # @param [Sketchup::View] view
     def draw(view)
-      return unless enabled?
-      positions = []
-      midpoints = []
-
-      parent.layers[:hex].items.each { |item|
-        positions << circle2d(item.position, 4, X_AXIS, 12)
-        item.segments.each { |segment|
-          midpoints << circle2d(midpoint(segment), 2, X_AXIS, 6)
-        }
-      }
-
-      view.line_stipple = ''
-      view.drawing_color = 'yellow'
-      positions.each { |polygon|
-        view.draw2d(GL_POLYGON, polygon)
-      }
-      midpoints.each { |polygon|
-        view.draw2d(GL_POLYGON, polygon)
-      }
+      @items.each { |item| item.draw(view) }
     end
 
   end # class
