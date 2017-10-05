@@ -68,7 +68,7 @@ module TT::Plugins::Hex
     # @param [HexEdge] edge
     # @return [HexEdge]
     def opposite_edge(edge)
-      i = (edge.index + 3) % 3
+      i = (edge.index + 3) % 6
       segments[i]
     end
 
