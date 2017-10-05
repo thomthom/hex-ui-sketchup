@@ -84,15 +84,6 @@ module TT::Plugins::Hex
       points
     end
 
-    # @param [Array<Geom::Point3d>] points
-    #
-    # @return [Array<Array(Geom::Point3d, Geom::Point3d)>]    
-    def ngon_segments(points)
-      points.size.times.map { |i|
-        Segment.new(points[i - 1], points[i])
-      }
-    end
-
   end # module
 
 end # module
