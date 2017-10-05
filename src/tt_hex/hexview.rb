@@ -9,6 +9,8 @@ module TT::Plugins::Hex
     include GeomUtils
     include GLUtils
 
+    SNAP_DISTANCE = 10 # Pixels
+
     attr_accessor :parent
     attr_accessor :items
 
@@ -27,6 +29,36 @@ module TT::Plugins::Hex
       hex = Hex.new([x, y, 0])
       hex.parent = self
       @items << hex
+    end
+
+    # Used to take a potential new position of a hex and snap it to its
+    # siblings. The returned value should be used for the hex's new position.
+    #
+    # @param [Float] x
+    # @param [Float] y
+    #
+    # @return [Geom::Point3d]
+    def snap(x, y)
+      point = Geom::Point3d.new(x, y, 0)
+      source_segments = Hex.new(point).segments # Cache.
+      items.each { |sibling|
+        next if sibling == self
+        # Traverse through all the siblings and see if this hex is close enough
+        # to snap to either of them.
+        source_segments.each { |source_segment|
+          sibling_segment = sibling.opposite_edge(source_segment)
+          # Hexes will snap when two of their side's mid-point is within a
+          # given distance.
+          vector = source_segment.midpoint.vector_to(sibling_segment.midpoint)
+          next unless vector.valid?
+          next if vector.length > SNAP_DISTANCE
+          # When there's a snap the computed new position is returned for the
+          # caller to use.
+          # TODO: Check if another hex is at this position already.
+          return point.offset(vector)
+        }
+      }
+      point
     end
 
     # @param [Integer] flags

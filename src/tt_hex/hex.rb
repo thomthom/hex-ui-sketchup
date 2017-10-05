@@ -7,6 +7,7 @@ module TT::Plugins::Hex
   class Hex < BaseObject
 
     attr_accessor :parent
+    attr_reader :position
 
     include GeomUtils
 
@@ -18,8 +19,6 @@ module TT::Plugins::Hex
     PADDING = 1 # Pixels
 
     RADIUS = 30 # Pixels
-
-    SNAP_DISTANCE = 10 # Pixels
 
     ICONS = {
       :alert => "\uf071",
@@ -37,15 +36,7 @@ module TT::Plugins::Hex
       @position = Geom::Point3d.new(position)
       @icon = ICONS.values.sample
 
-      @drag_position = nil
       @left_button_down = nil
-    end
-
-    # @return [Geom::Point3d]
-    def position
-      # While in a drag the position property isn't set yet, so we much return
-      # the dragged position first if available.
-      @drag_position || @position
     end
 
     # @return [Array<Geom::Point3d>]
@@ -95,9 +86,7 @@ module TT::Plugins::Hex
     # @param [Float] y
     # @param [Sketchup::View] view
     def onLButtonUp(flags, x, y, view)
-      @position = @drag_position if @drag_position
       @left_button_down = nil
-      @drag_position = nil
       if point_inside?([x, y, 0])
         # TODO: Make this method return true/false to indicate it was clicked.
         #   Make the container emit the sound - only once.
@@ -111,11 +100,11 @@ module TT::Plugins::Hex
     # @param [Sketchup::View] view
     def onMouseMove(flags, x, y, view)
       if @left_button_down
-        offset = @left_button_down.vector_to([x, y, 0])
+        offset = @position.vector_to([x, y, 0])
         if offset.valid?
           # If the hex moves, then check if it snaps to anything.
           new_hex_position = @position.offset(offset)
-          @drag_position = snap(new_hex_position.x, new_hex_position.y)
+          @position = parent.snap(new_hex_position.x, new_hex_position.y)
         end
       end
     end
@@ -150,40 +139,6 @@ module TT::Plugins::Hex
     end
 
     private
-
-    # Used to take a potential new position of a hex and snap it to its
-    # siblings. The returned value should be used for the hex's new position.
-    #
-    # @param [Float] x
-    # @param [Float] y
-    #
-    # @return [Geom::Point3d]
-    def snap(x, y)
-      # TODO: This might belong to the parent - acting as a manager for its
-      #   childen's positions.
-      point = Geom::Point3d.new(x, y, 0)
-      points = hexagon(point, RADIUS)
-      this_segments = ngon_segments(points) # Cache.
-      parent.items.each { |hex|
-        # Traverse through all the siblings and see if this hex is close enough
-        # to snap to either of them.
-        next if hex == self
-        # Each side of the hex is compared to the sides of the other hex'.
-        this_segments.each_with_index { |this_segment|
-          other_segment = hex.opposite_edge(this_segment)
-          # Hexes will snap when two of their side's mid-point is within a
-          # given distance.
-          vector = this_segment.midpoint.vector_to(other_segment.midpoint)
-          next unless vector.valid?
-          next if vector.length > SNAP_DISTANCE
-          # When there's a snap the computed new position is returned for the
-          # caller to use.
-          # TODO: Check if another hex is at this position already.
-          return point.offset(vector)
-        }
-      }
-      point
-    end
 
     # @return [Sketchup::Color]
     def background_color
